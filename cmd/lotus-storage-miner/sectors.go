@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	sealing "github.com/filecoin-project/lotus/extern/storage-sealing"
 	"os"
 	"sort"
 	"strconv"
@@ -136,6 +137,12 @@ var sectorsStatusCmd = &cli.Command{
 var sectorsListCmd = &cli.Command{
 	Name:  "list",
 	Usage: "List sectors",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name: "hide-removed",
+			Usage: "to hide Removed sectors",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		nodeApi, closer, err := lcli.GetStorageMinerAPI(cctx)
 		if err != nil {
@@ -192,6 +199,8 @@ var sectorsListCmd = &cli.Command{
 				continue
 			}
 
+			if !cctx.Bool("hide-removed") ||
+				(cctx.Bool("hide-removed") && st.State != api.SectorState(sealing.Removed)) {
 			_, inSSet := commitedIDs[s]
 			_, inASet := activeIDs[s]
 
@@ -205,6 +214,7 @@ var sectorsListCmd = &cli.Command{
 				st.Deals,
 				st.ToUpgrade,
 			)
+			}
 		}
 
 		return w.Flush()
